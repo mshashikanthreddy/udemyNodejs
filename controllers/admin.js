@@ -16,12 +16,12 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  Product.create({
-    title : title ,
-    price : price ,
-    description : description ,
-    imageUrl : imageUrl
-  })
+  req.user.createProduct({
+      title : title ,
+      price : price ,
+      description : description ,
+      imageUrl : imageUrl
+  }) // it the sequilize object we declared in app.js , createProduct is a inbuilt sequelize method to maintain a relation with user.
   .then((result) => {
     console.log('created product');
     res.redirect('/admin/products'); // to redirect after adding products
@@ -35,8 +35,11 @@ exports.getEditProduct = (req,res,next) => {
     return res.redirect('/');
   }
   const prodId = req.params.productId;
-  Product.findByPk(prodId)  // latest version uses the 'findByPk' in place of 'findById'
-  .then(product => {
+  req.user
+  .getProducts({where : {id : prodId}})
+  //Product.findByPk(prodId)  // latest version uses the 'findByPk' in place of 'findById'
+  .then(products => {
+    const product = products[0];
     if(!product){
       return res.redirect('/');
     }
@@ -72,7 +75,8 @@ exports.postEditProduct = (req, res, next) => {
 }
 
 exports.getProducts = (req, res, next) => {
-  Product.findAll()
+  req.user
+  .getProducts()
   .then((products) => {
     res.render('admin/products', {
       prods: products,
