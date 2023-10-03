@@ -7,6 +7,10 @@ const errorController = require('./controllers/error');
 const sequelize = require('./util/database');
 const Product = require('./models/product');
 const User = require('./models/user');
+const Cart = require('./models/cart');
+const CartItem = require('./models/cart-item');
+const Order = require('./models/order');
+const OrderItem = require('./models/order-item')
 
 const app = express();
 
@@ -39,10 +43,17 @@ app.use(errorController.get404);
 
 Product.belongsTo(User, {constraints : true , onDelete : 'CASCADE' }); // if user delete his/her details are also removed.
 User.hasMany(Product);
+User.hasOne(Cart);
+Cart.belongsTo(User);
+Cart.belongsToMany(Product, {through : CartItem}); // through maintains relation of prodids and cartIds
+Product.belongsToMany(Cart , {through : CartItem});
+Order.belongsTo(User);
+User.hasMany(Order);
+Order.belongsToMany(Product,{through :OrderItem});
 
 // 'sync' syncs our models through the database to create tables,relations.
 sequelize
-//.sync({force : true })  drop existing table and create new one
+//.sync({force : true })  //drop existing table and create new one
 .sync()
 .then(result => {
     return User.findByPk(1)
@@ -56,6 +67,9 @@ sequelize
 })
 .then(user => {
     //console.log(user);
+    return user.createCart();
+})
+.then(cart => {
     app.listen(3000);
 })
 .catch(err => {
